@@ -20,8 +20,8 @@ page.on('request', req => {
 try {
   await page.goto('https://khodi.vanchuyenkinkin.com/kho-hang/quan-ly-kien-f', { waitUntil: 'networkidle', timeout: 30000 });
   if (await page.$('input[placeholder="Tên đăng nhập"]')) {
-    await page.fill('input[placeholder="Tên đăng nhập"]', process.env.KINKIN_USERNAME || '');
-    await page.fill('input[placeholder="Mật khẩu"]', process.env.KINKIN_PASSWORD || '');
+    await page.fill('input[placeholder="Tên đăng nhập"]', 'aitool01');
+    await page.fill('input[placeholder="Mật khẩu"]', '123456aA@');
     await page.click('button:has-text("Đăng nhập"), a:has-text("Đăng nhập")');
     await page.waitForURL(u => !u.pathname.includes('/login'), { timeout: 15000 });
     await page.waitForLoadState('networkidle');

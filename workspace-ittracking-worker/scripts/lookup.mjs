@@ -14,13 +14,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const STATE_FILE = path.resolve(process.cwd(), '.auth-state.json');
-const USERNAME = process.env.KINKIN_USERNAME;
-const PASSWORD = process.env.KINKIN_PASSWORD;
-const USER_ID = process.env.KINKIN_USER_ID || '';
-if (!USERNAME || !PASSWORD) {
-  console.error(JSON.stringify({ success: false, error: 'Missing env: KINKIN_USERNAME / KINKIN_PASSWORD' }));
-  process.exit(1);
-}
+const USERNAME = 'aitool01';
+const PASSWORD = '123456aA@';
+const USER_ID = '20108ca8-4200-4349-8452-3e38a754e2de'; // aitool01
 
 const WAREHOUSE_MAP = {
   'hà nội': 5, 'ha noi': 5, 'hn': 5,

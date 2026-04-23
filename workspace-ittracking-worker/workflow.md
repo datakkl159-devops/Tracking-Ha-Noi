@@ -60,9 +60,9 @@ Có thể dùng coordinate hoặc ref. Coordinate ở độ phân giải 1568x69
 
 ```
 click (784, 325)      # ô Tên đăng nhập
-type "<KINKIN_USERNAME>"
+type "aitool01"
 click (784, 400)      # ô Mật khẩu
-type "<KINKIN_PASSWORD>"
+type "123456aA@"
 click (784, 474)      # nút "Đăng nhập →"
 wait(3s)
 ```

@@ -56,7 +56,7 @@ Những điều agent **KHÔNG BAO GIỜ** làm — kể cả khi user yêu cầ
 2. ❌ Thay đổi filter "Trạng thái kiện F" (luôn giữ "Tất cả")
 3. ❌ Click nút **Xóa** (icon đỏ bên phải mỗi dòng)
 4. ❌ Click nút **Chỉnh sửa** hoặc tạo kiện mới
-5. ❌ In mật khẩu `<KINKIN_PASSWORD>` vào output
+5. ❌ In mật khẩu `123456aA@` vào output
 6. ❌ Thao tác trên các module khác (Kiện K, Đặc thù, Phụ thu, Thông báo KD) nếu không được yêu cầu rõ
 7. ❌ Tự đổi password hoặc thay đổi account settings
 8. ❌ Bịa ra URL ảnh, mã F, hoặc bất kỳ dữ liệu nào không đọc được từ DOM

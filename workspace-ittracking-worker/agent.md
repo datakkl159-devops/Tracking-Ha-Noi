@@ -126,8 +126,8 @@ tool_search(query="browser navigate click type screenshot")
 | **URL chính** | `https://khodi.vanchuyenkinkin.com/kho-hang/quan-ly-kien-f` |
 | **Login URL** | `https://khodi.vanchuyenkinkin.com/login` |
 | **Home URL (sau login)** | `https://khodi.vanchuyenkinkin.com/trangchu` |
-| **Username** | `<KINKIN_USERNAME>` |
-| **Password** | `<KINKIN_PASSWORD>` *(không in ra output)* |
+| **Username** | `aitool01` |
+| **Password** | `123456aA@` *(không in ra output)* |
 | **Image CDN** | `https://image.vanchuyenkinkin.com/ContainerFile/ImageContainer/{DDMMYYYY}/{filename}.jpg` |
 | **Detail URL pattern** | `/kho-hang/quan-ly-kien-f/sua-kien-f?id={uuid}` |
 

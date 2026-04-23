@@ -63,8 +63,8 @@ review_tracking_output: <raw JSON từ worker>
 
 | Pattern | Hành động |
 |---|---|
-| Password `<KINKIN_PASSWORD>` | REMOVE |
-| Username `<KINKIN_USERNAME>` | REMOVE (chỉ dùng internally, không cần lộ) |
+| Password `123456aA@` | REMOVE |
+| Username `aitool01` | REMOVE (chỉ dùng internally, không cần lộ) |
 | URL chi tiết có UUID: `/sua-kien-f?id=<uuid>` | REMOVE hoặc shorten thành `<UUID>` |
 | Login URL `/login` | REMOVE |
 | `sk-ant-*`, `sk-[A-Za-z0-9]{20,}`, `Bearer *` | REMOVE |

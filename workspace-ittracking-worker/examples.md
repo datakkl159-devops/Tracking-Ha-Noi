@@ -15,7 +15,7 @@
 → tabs_context_mcp()
 → navigate("/kho-hang/quan-ly-kien-f")
 → screenshot → URL = /login
-→ login (<KINKIN_USERNAME> / ***)
+→ login (aitool01 / ***)
 → navigate lại
 → verify kho = Hà Nội
 → read_page → ref của "Nhập từ cần tìm" và "Tìm kiếm"

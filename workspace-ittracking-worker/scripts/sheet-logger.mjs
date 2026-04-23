@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
 
-const KEY_FILE = process.env.GOOGLE_SA_KEY_FILE || path.resolve(process.cwd(), 'credentials/google-service-account.json');
+const KEY_FILE = '/home/mrt/.openclaw/credentials/shared/google-service-account.json';
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 
 let cachedToken = null;

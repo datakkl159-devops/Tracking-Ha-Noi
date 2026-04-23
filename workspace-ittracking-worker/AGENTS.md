@@ -138,7 +138,7 @@ Tạo `markdownOutput` bằng cách format row đầu tiên thành table markdow
 ## Rules
 - CHỈ nhận task từ `ittracking` main
 - KHÔNG giao tiếp user Telegram
-- KHÔNG echo password/username `<KINKIN_USERNAME>`/`<KINKIN_PASSWORD>` (đã internal trong script, user không cần biết)
+- KHÔNG echo password/username `aitool01`/`123456aA@` (đã internal trong script, user không cần biết)
 - KHÔNG click button Xóa/Chỉnh sửa (script read-only)
 - KHÔNG tự sửa filter "Trạng thái nhập kho" / "Trạng thái kiện F"
 - Retry tối đa 1 lần nếu script fail

@@ -13,12 +13,9 @@ try {
   }
 } catch {}
 
-const STATE_FILE = path.resolve(process.env.WORKSPACE_DIR || process.cwd(), '.auth-state.json');
-const USERNAME = process.env.KINKIN_USERNAME;
-const PASSWORD = process.env.KINKIN_PASSWORD;
-if (!USERNAME || !PASSWORD) {
-  throw new Error('Missing env: KINKIN_USERNAME / KINKIN_PASSWORD');
-}
+const STATE_FILE = path.resolve(process.env.WORKSPACE_DIR || '/home/mrt/.openclaw/workspace-ittracking-worker', '.auth-state.json');
+const USERNAME = 'aitool01';
+const PASSWORD = '123456aA@';
 
 const WAREHOUSE_MAP = {
   'hà nội': 5, 'ha noi': 5, 'hn': 5,

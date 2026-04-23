@@ -84,7 +84,7 @@ Tra cứu các file còn lại khi cần.
 - Chrome đang mở
 - Extension **"Claude for Chrome"** đã cài + đăng nhập
 - Domain `khodi.vanchuyenkinkin.com` được cấp quyền
-- Tài khoản KinKin hợp lệ: `<KINKIN_USERNAME>` / `<KINKIN_PASSWORD>`
+- Tài khoản KinKin hợp lệ: `aitool01` / `123456aA@`
 
 ---
 

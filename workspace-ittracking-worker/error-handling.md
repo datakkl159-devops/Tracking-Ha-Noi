@@ -22,7 +22,7 @@
 **Action:**
 - Screenshot trang lỗi
 - **Không tự thử password khác**
-- Báo user: "Tài khoản `<KINKIN_USERNAME>` đăng nhập không thành công. Vui lòng cung cấp tài khoản khác hoặc kiểm tra trạng thái tài khoản."
+- Báo user: "Tài khoản `aitool01` đăng nhập không thành công. Vui lòng cung cấp tài khoản khác hoặc kiểm tra trạng thái tài khoản."
 
 ---
 

@@ -1,0 +1,20 @@
+[Unit]
+Description=ITTracking Standalone Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Đổi đường dẫn cho phù hợp server của bạn
+WorkingDirectory=/opt/ittracking-bot
+ExecStart=/usr/bin/node /opt/ittracking-bot/scripts/tg-bot.mjs
+EnvironmentFile=/opt/ittracking-bot/.env
+Restart=always
+RestartSec=5
+
+# Logging
+StandardOutput=append:/var/log/ittracking-bot.log
+StandardError=append:/var/log/ittracking-bot.log
+
+[Install]
+WantedBy=multi-user.target

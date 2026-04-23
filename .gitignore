@@ -1,19 +1,18 @@
-# ── Secrets & credentials ──
+# Per-server config (user điền riêng)
+.allowed-chats.json
+.group-sheets.json
+.tg-offset
 .env
 .env.local
 credentials/
-*.pem
-*.key
 openclaw.json
-# (dùng openclaw.example.json làm template, openclaw.json là file thật có secrets)
 
-# ── Runtime state per-server (không commit) ──
-.auth-state.json
-.tg-offset
-.file-id-cache.json
-.allowed-chats.json
-.group-sheets.json
-HEARTBEAT.md
+# Node
+node_modules/
+
+# Logs
+*.log
+/tmp/openclaw/
 
 # OpenClaw runtime state dirs
 /agents/
@@ -33,18 +32,9 @@ HEARTBEAT.md
 workspace/state/
 workspace/projects/
 **/.openclaw/
+HEARTBEAT.md
 
-# ── Node ──
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# ── Logs ──
-*.log
-/tmp/openclaw/
-
-# ── Backups & editor ──
+# Backups & editor
 *.bak
 *.bak.*
 *.swp

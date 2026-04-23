@@ -26,14 +26,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WORKDIR = path.dirname(__dirname);
 const OFFSET_FILE = path.join(WORKDIR, '.tg-offset');
 
-const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME;
-const BOT_ID = Number(process.env.TELEGRAM_BOT_ID || TOKEN?.split(':')[0] || 0);
-if (!TOKEN || !BOT_USERNAME || !BOT_ID) {
-  console.error('Missing env: TELEGRAM_BOT_TOKEN / TELEGRAM_BOT_USERNAME / TELEGRAM_BOT_ID');
-  process.exit(1);
-}
+const TOKEN = '8640692193:AAGhKc4Xa-rIB3njfg8w3WEZxp2mM_Qkd7E';
 const TG = `https://api.telegram.org/bot${TOKEN}`;
+const BOT_USERNAME = 'Bottrackin_bot';
+const BOT_ID = 8640692193;
 
 // Allowed chats persistence (có thể thêm group mới runtime qua file)
 const ALLOWED_CHATS_FILE = path.join(WORKDIR, '.allowed-chats.json');

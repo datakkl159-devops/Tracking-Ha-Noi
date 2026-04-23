@@ -1,28 +1,50 @@
-# Secrets & credentials
+# ── Secrets & credentials ──
 .env
 .env.local
 credentials/
 *.pem
 *.key
+openclaw.json
+# (dùng openclaw.example.json làm template, openclaw.json là file thật có secrets)
 
-# Runtime state (per-server, do not commit)
+# ── Runtime state per-server (không commit) ──
 .auth-state.json
 .tg-offset
 .file-id-cache.json
 .allowed-chats.json
 .group-sheets.json
+HEARTBEAT.md
 
-# Node
+# OpenClaw runtime state dirs
+/agents/
+/subagents/
+/tasks/
+/delivery-queue/
+/flows/
+/media/
+/memory/
+/canvas/
+/completions/
+/devices/
+/identity/
+/logs/
+/qqbot/
+/telegram/
+workspace/state/
+workspace/projects/
+**/.openclaw/
+
+# ── Node ──
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Logs
+# ── Logs ──
 *.log
 /tmp/openclaw/
 
-# Backups & editor
+# ── Backups & editor ──
 *.bak
 *.bak.*
 *.swp

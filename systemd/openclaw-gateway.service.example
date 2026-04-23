@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenClaw Gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/openclaw-gateway
+Environment=HOME=/home/<USER>
+Environment=NODE_OPTIONS=--dns-result-order=ipv4first
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

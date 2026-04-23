@@ -1,0 +1,190 @@
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "<ANTHROPIC_API_KEY>"
+  },
+  "gateway": {
+    "auth": {
+      "mode": "token",
+      "token": "<GATEWAY_AUTH_TOKEN>"
+    },
+    "mode": "local",
+    "port": 18789,
+    "bind": "loopback",
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "controlUi": {
+      "allowInsecureAuth": true
+    },
+    "nodes": {
+      "denyCommands": [
+        "camera.snap",
+        "camera.clip",
+        "screen.record",
+        "contacts.add",
+        "calendar.add",
+        "reminders.add",
+        "sms.send",
+        "sms.search"
+      ]
+    }
+  },
+  "models": {
+    "providers": {
+      "9router": {
+        "baseUrl": "http://localhost:20128/v1",
+        "apiKey": "<9ROUTER_API_KEY>",
+        "api": "openai-responses",
+        "auth": "api-key",
+        "models": [
+          {
+            "id": "if/kimi-k2-thinking",
+            "name": "9Router Kimi",
+            "compat": {}
+          },
+          {
+            "id": "cx/gpt-5.4",
+            "name": "9Router GPT 5.4",
+            "compat": {}
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "<ABSOLUTE_PATH>/workspace",
+      "models": {
+        "openai-codex/gpt-5.4": {},
+        "9router/cx/gpt-5.4": {},
+        "anthropic/claude-sonnet-4-6": {
+          "params": { "thinking": "none" }
+        },
+        "anthropic/claude-haiku-4-5": {
+          "params": { "thinking": "none" }
+        }
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "default": true,
+        "name": "Main",
+        "workspace": "<ABSOLUTE_PATH>/workspace",
+        "model": {
+          "primary": "9router/cx/gpt-5.4"
+        }
+      },
+      {
+        "id": "ittracking",
+        "name": "ITTracking",
+        "workspace": "<ABSOLUTE_PATH>/workspace-ittracking",
+        "model": {
+          "primary": "anthropic/claude-haiku-4-5",
+          "fallbacks": ["9router/cx/gpt-5.4"]
+        },
+        "subagents": {
+          "model": "anthropic/claude-haiku-4-5",
+          "allowAgents": ["ittracking-worker", "ittracking-qa"]
+        }
+      },
+      {
+        "id": "ittracking-worker",
+        "name": "ITTracking Worker",
+        "workspace": "<ABSOLUTE_PATH>/workspace-ittracking-worker",
+        "model": {
+          "primary": "anthropic/claude-haiku-4-5",
+          "fallbacks": ["9router/cx/gpt-5.4"]
+        }
+      },
+      {
+        "id": "ittracking-qa",
+        "name": "ITTracking QA",
+        "workspace": "<ABSOLUTE_PATH>/workspace-ittracking-qa",
+        "model": {
+          "primary": "anthropic/claude-sonnet-4-6",
+          "fallbacks": ["9router/cx/gpt-5.4"]
+        }
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "agentId": "ittracking",
+      "match": {
+        "channel": "telegram",
+        "accountId": "ittracking"
+      }
+    },
+    {
+      "agentId": "main",
+      "match": {
+        "channel": "telegram",
+        "accountId": "default"
+      }
+    }
+  ],
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "tools": {
+    "profile": "coding",
+    "agentToAgent": {
+      "enabled": true,
+      "allow": ["ittracking", "ittracking-worker", "ittracking-qa"]
+    },
+    "web": {
+      "search": {
+        "provider": "ollama",
+        "enabled": true
+      }
+    }
+  },
+  "auth": {
+    "profiles": {
+      "openai-codex:<YOUR_EMAIL>": {
+        "provider": "openai-codex",
+        "mode": "oauth",
+        "email": "<YOUR_EMAIL>"
+      }
+    }
+  },
+  "plugins": {
+    "entries": {
+      "ollama": {
+        "enabled": true
+      },
+      "openai": {
+        "enabled": true
+      },
+      "anthropic": {
+        "enabled": true
+      }
+    }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "groupPolicy": "open",
+      "groupAllowFrom": ["*"],
+      "groups": {},
+      "customCommands": [],
+      "network": {
+        "dnsResultOrder": "ipv4first"
+      },
+      "accounts": {
+        "default": {
+          "botToken": "<TELEGRAM_BOT_TOKEN_MAIN>",
+          "dmPolicy": "pairing",
+          "allowFrom": []
+        },
+        "ittracking": {
+          "botToken": "<TELEGRAM_BOT_TOKEN_TRACKING>",
+          "dmPolicy": "pairing",
+          "enabled": false
+        }
+      }
+    }
+  }
+}

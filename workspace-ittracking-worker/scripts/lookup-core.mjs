@@ -87,7 +87,7 @@ async function callSearchApi(token, wareHouseId, opts) {
 
   const body = {
     page: 1,
-    pageSize: 50,
+    pageSize: 10,                 // giảm từ 50 → 10 (tracking lookup chỉ cần 1 row, payload nhỏ → nhanh hơn)
     sortField: '',
     sortOrder: 'ASC',
     textSerach: opts.tracking || opts.customer || '',
@@ -114,10 +114,10 @@ async function callSearchApi(token, wareHouseId, opts) {
 }
 
 async function searchWithFallback(token, opts) {
-  // Step 1: HN trước
+  // Step 1: HN trước (case phổ biến) — KinKin server slow down khi parallel nên sequential nhanh hơn ở HN-hit
   const hn = await callSearchApi(token, 5, opts);
   if (hn.json?.data?.length > 0) return hn;
-  // Step 2: parallel HCM + Shiki
+  // Step 2: HN trống → parallel HCM + Shiki (chấp nhận chậm hơn vì là rare path)
   const [hcm, shiki] = await Promise.all([
     callSearchApi(token, 6, opts).catch(e => ({ error: e, wareHouseId: 6 })),
     callSearchApi(token, 7, opts).catch(e => ({ error: e, wareHouseId: 7 })),
@@ -152,7 +152,42 @@ function mapApiRowToSchema(r) {
     nguoiKiemHoa,                             // inspector (phần SĐT)
     ngayKiemHoa,                              // inspector (phần date)
     maInvoice: r.invoiceNumber || r.vatBillCode || '',  // Mã Invoice
+    maK: (r.packageKBillCode || '').match(/^(\d{6}-\d+)/)?.[1] || '',  // Mã K = mã Hawb (2 phần đầu của packageKBillCode)
+    packageFId: r.id || '',  // UUID kiện F — dùng cho endpoint detail (get-package-f-information-by-id)
   };
+}
+
+const API_DETAIL = 'https://warehousedepartureapi.vanchuyenkinkin.com/warehousedeparture/api/packageF/get-package-f-information-by-id';
+
+// Lấy danh sách sản phẩm chi tiết của 1 kiện F (dùng packageFId từ search result)
+export async function getPackageDetail(packageFId) {
+  if (!packageFId) return { success: false, error: 'missing packageFId' };
+  let token = getToken();
+  if (!token) {
+    token = await refreshTokenViaBrowser();
+    if (!token) return { success: false, error: 'cannot obtain auth token' };
+  }
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(`${API_DETAIL}?id=${encodeURIComponent(packageFId)}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (res.status === 401) {
+        token = await refreshTokenViaBrowser();
+        if (!token) return { success: false, error: 'auth refresh failed' };
+        continue;
+      }
+      if (!res.ok) return { success: false, error: `HTTP ${res.status}` };
+      const j = await res.json();
+      // Response wrap: { responseStatus, responseMess, data: { packageF, packageFProduct } }
+      const data = j.data || j;
+      return { success: true, packageF: data.packageF || null, packageFProduct: data.packageFProduct || [] };
+    } catch (e) {
+      return { success: false, error: String(e.message || e).slice(0, 200) };
+    }
+  }
+  return { success: false, error: 'auth retry exhausted' };
 }
 
 export async function lookup(opts = {}) {

@@ -4,6 +4,45 @@
 
 ---
 
+## 📜 Lịch sử nâng cấp (changelog)
+
+### 2026-04-26 — Mã K + Danh sách hàng
+
+**Thêm:**
+- Field `maK` trong schema (`lookup-core.mjs`) — extract `<DDMMYY>-<seq>` từ `packageKBillCode` bằng regex `/^(\d{6}-\d+)/`. Mã K = mã Hawb.
+- Field `packageFId` trong schema — uuid kiện F, dùng cho endpoint detail
+- Function exported `getPackageDetail(packageFId)` — gọi `GET /packageF/get-package-f-information-by-id?id=<uuid>` (auto JWT refresh, retry 401)
+- Mode `product-list` — input regex `/danh sách hàng|ds hàng|sản phẩm|list hàng|hàng hoá/`
+- Button "📦 Danh sách hàng" — hàng 3 dưới layout 6 nút cũ (callback_data `product-list:<code>`)
+- Output dạng bảng monospace 4 cột: `Mã hàng | SL | Gợi nhớ | Tên hàng`
+  - Cột flex auto-width theo content dài nhất (`Math.max`)
+  - Đường kẻ `│` giữa các cột, `┼` ở intersection của separator row
+  - Filter `isApprovalProduct === false` — loại sản phẩm đã approve
+- Cache `detailCache` (5 min TTL, 100 entries max) — bấm lại instant <200ms
+- Display `🏷 Mã K: <maK>` trong mode `full` (sau Mã tracking) và `default` (sau Mã F)
+
+**Tối ưu tốc độ (giữ output 100%):**
+- `RESULT_TTL`: 60s → 300s (5 phút) — button taps reuse cache instant
+- `pageSize` API search: 50 → 10 — payload nhỏ hơn
+- Pre-warm undici connection pool tới Telegram + KinKin khi bot start (tiết kiệm 200-300ms TCP+TLS)
+- Giữ `searchWithFallback` sequential HN-first (parallel test thấy chậm hơn vì KinKin server slow down khi đa request đồng thời)
+
+**SLA mới:**
+- Button cache hit: <200ms
+- Query lần đầu (HN nhanh): 500-900ms
+- Query mode `product-list` lần đầu: 1.2-1.8s (search + detail call)
+- Query `product-list` lần 2 cùng kiện: <300ms
+
+**Test cases bổ sung trong checklist:**
+- [ ] Bấm "📦 Danh sách hàng" → bảng 4 cột với đường kẻ phân cột
+- [ ] Tên dài (>20 chars) hiển thị đầy đủ, không truncate `...`
+- [ ] Cell không tràn sang cột khác — cột flex theo content
+- [ ] Sản phẩm `isApprovalProduct: true` không xuất hiện trong list
+- [ ] Mã K hiển thị đúng format `DDMMYY-N` trong default + full mode
+- [ ] Bấm lại nút sản phẩm cùng kiện trong 5 phút → reply <300ms (cache hit)
+
+---
+
 ## ✅ Tiêu chí user acceptance (không thương lượng)
 
 ### 1. Input templates — User gõ được theo các pattern này
@@ -21,6 +60,7 @@ Bot phải nhận diện đúng `mode` từ natural-language input của user (c
 | `cod <mã>`, `tiền thu hộ` | `cod` | `/\bcod\b|tiền thu hộ/` |
 | `ảnh <mã>`, `hình ảnh`, `xem ảnh`, `picture` | `image` | `/hình ảnh|xem ảnh|\bảnh\b|picture/` |
 | `chi tiết <mã>`, `đầy đủ <mã>`, `full <mã>`, `thông tin` | `full` | `/thông tin|chi tiết|đầy đủ|full|tất cả/` |
+| `danh sách hàng <mã>`, `ds hàng`, `sản phẩm`, `list hàng` | `product-list` | `/danh sách hàng|ds hàng|sản phẩm|list hàng|hàng hoá/` |
 | `<mã>` (không keyword) | `default` | (chỉ mã F/tracking/KH) |
 
 Mã chấp nhận: `F1049185` (packageF), `829192371556` (trackingCode), `S04-051HN` (customerCode).
@@ -41,13 +81,15 @@ Mọi reply bắt đầu bằng tag `@<username>` xuống dòng + `Mã tracking:
 | `cod` | `💰 COD: *<amount> ₫*` (format VND, vd `1.750.000 ₫`) |
 | `note` | `📝 Ghi chú: *<note>*` |
 | `image` | Ảnh inline (sendPhoto) + caption `🖼 (ảnh kèm theo)`. Fallback text nếu Telegram không tải được. |
-| `full` | Table đầy đủ: Mã F, Mã tracking, Ngày nhập kho, Người kiểm + ngày kiểm, Cân nặng, Mã KH, COD, Trạng thái, Chuyến hàng, Nguồn tạo, Invoice, Ghi chú + ảnh inline |
+| `full` | Table đầy đủ: Mã F, Mã tracking, **Mã K**, Ngày nhập kho, Người kiểm + ngày kiểm, Cân nặng, Mã KH, COD, Trạng thái, Chuyến hàng, Nguồn tạo, Invoice, Ghi chú + ảnh inline |
+| `product-list` | Bảng monospace 4 cột (`Mã hàng \| SL \| Gợi nhớ \| Tên hàng`) trong code block — cột flex auto-width, đường kẻ `│`/`┼` phân cách, filter `isApprovalProduct=false` |
 | Không tìm thấy | `❌ Không tìm thấy mã tracking \`<input>\`, vui lòng nhập lại.` |
 
-**Mỗi reply kèm 6 nút gợi ý 3×2:**
+**Mỗi reply kèm 7 nút gợi ý (3-3-1):**
 ```
-[✅ Trạng thái]  [🖼 Cần ảnh]    [🚚 Nhập kho đi]
-[👷 Kiểm hoá]    [🧾 Invoice]    [📋 Chi tiết]
+[✅ Trạng thái]      [🖼 Cần ảnh]    [🚚 Nhập kho đi]
+[👷 Kiểm hoá]        [🧾 Invoice]    [📋 Chi tiết]
+[📦 Danh sách hàng]
 ```
 
 ### 3. Tốc độ phản hồi — ≤ 1 giây cho query cached

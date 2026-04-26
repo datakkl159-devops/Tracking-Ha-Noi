@@ -10,7 +10,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Agent, setGlobalDispatcher } from 'undici';
-import { lookup } from './lookup-core.mjs';
+import { lookup, getPackageDetail } from './lookup-core.mjs';
 import { appendRow, ensureHeader } from './sheet-logger.mjs';
 
 // Force IPv4 for all fetch calls — Telegram API hangs on IPv6 in VM network.
@@ -181,7 +181,52 @@ const CONTEXT_TTL = 30 * 60 * 1000; // 30 min
 // Result cache — same code → same data. Button taps reuse this.
 // Keyed by `${code}`, value: { result, timestamp }
 const resultCache = new Map();
-const RESULT_TTL = 60 * 1000; // 60s
+const RESULT_TTL = 5 * 60 * 1000; // 5 min — cùng mã trong 5 phút reuse cache (bấm button liên tục instant)
+
+// Cache danh sách sản phẩm theo packageFId (cùng TTL 5min với search cache)
+const detailCache = new Map(); // packageFId → { products, ts }
+async function getProductsCached(packageFId) {
+  if (!packageFId) return null;
+  const c = detailCache.get(packageFId);
+  if (c && Date.now() - c.ts < RESULT_TTL) return c.products;
+  const r = await getPackageDetail(packageFId);
+  if (!r.success) return null;
+  const products = r.packageFProduct || [];
+  detailCache.set(packageFId, { products, ts: Date.now() });
+  if (detailCache.size > 100) {
+    const now = Date.now();
+    for (const [k, v] of detailCache.entries()) if (now - v.ts > RESULT_TTL) detailCache.delete(k);
+  }
+  return products;
+}
+
+// Format danh sách sản phẩm thành bảng monospace (Telegram code block)
+// Cột tự co dãn theo nội dung dài nhất — KHÔNG truncate, hiển thị đầy đủ text
+function formatProductTable(products) {
+  if (!products || products.length === 0) return '⚠️ Kiện này chưa có danh sách hàng';
+  const clean = s => String(s ?? '').replace(/\n/g, ' ').trim();
+  const cleaned = products.map(p => ({
+    code: clean(p.productCode),
+    qty: clean(p.quantity),
+    remi: clean(p.reminiscentName) || '-',
+    name: clean(p.productName),
+  }));
+  const W = {
+    code: Math.max('Mã hàng'.length, ...cleaned.map(p => p.code.length)),
+    qty: Math.max('SL'.length, ...cleaned.map(p => p.qty.length)),
+    remi: Math.max('Gợi nhớ'.length, ...cleaned.map(p => p.remi.length)),
+    name: Math.max('Tên hàng'.length, ...cleaned.map(p => p.name.length)),
+  };
+  const pad = (s, n, right) => right ? String(s).padStart(n) : String(s).padEnd(n);
+  const COL = ' │ ';   // vertical separator giữa các cột
+  const SEP_X = '─┼─'; // intersection ở separator row
+  const header = `${pad('Mã hàng', W.code)}${COL}${pad('SL', W.qty, true)}${COL}${pad('Gợi nhớ', W.remi)}${COL}${pad('Tên hàng', W.name)}`;
+  const sep = `${'─'.repeat(W.code)}${SEP_X}${'─'.repeat(W.qty)}${SEP_X}${'─'.repeat(W.remi)}${SEP_X}${'─'.repeat(W.name)}`;
+  const rows = cleaned.map(p =>
+    `${pad(p.code, W.code)}${COL}${pad(p.qty, W.qty, true)}${COL}${pad(p.remi, W.remi)}${COL}${pad(p.name, W.name)}`
+  );
+  return '```\n' + [header, sep, ...rows].join('\n') + '\n```';
+}
 
 // Load offset từ file (persist qua restart → tránh re-process updates cũ)
 let offset = 0;
@@ -301,6 +346,7 @@ function parseIntent(text) {
   else if (/\bcod\b|tiền thu hộ|tien thu ho/.test(lower)) mode = 'cod';
   else if (/hình ảnh|hinh anh|xem ảnh|xem anh|link ảnh|link anh|picture|\bảnh\b|\banh\b|photo/.test(lower)) mode = 'image';
   else if (/thông tin|thong tin|chi tiết|chi tiet|đầy đủ|day du|full|tất cả|tat ca|xem hết|xem het/.test(lower)) mode = 'full';
+  else if (/danh sách hàng|danh sach hang|ds hàng|ds hang|sản phẩm|san pham|product list|list hàng|list hang|hàng hoá|hang hoa/.test(lower)) mode = 'product-list';
 
   const isCustomer = code && (/^[A-Z]\d+-[A-Z0-9]+$/i.test(code) || /-[A-Z]+$/.test(code));
 
@@ -449,10 +495,20 @@ function formatReply(intent, result, user) {
       answer = r.imageUrl ? '🖼 (ảnh kèm theo)' : '⚠️ Kiện này chưa có ảnh trong hệ thống.';
       break;
 
+    case 'product-list': {
+      // Products được pre-fetch trong handleMessage/handleCallback và gắn vào intent.__products
+      // Chỉ hiện những sản phẩm có isApprovalProduct === false (loại bỏ approval products)
+      const all = intent.__products || [];
+      const products = all.filter(p => p.isApprovalProduct === false);
+      answer = `📦 Danh sách hàng (${products.length} mã):\n${formatProductTable(products)}`;
+      break;
+    }
+
     case 'full': {
       const rows = [HR];
       rows.push(`📋 *${r.maF}* — Kho ${wh}`);
       if (r.maTracking && r.maTracking !== r.maF) rows.push(`🔗 Mã tracking: \`${r.maTracking}\``);
+      if (r.maK) rows.push(`🏷 Mã K: \`${r.maK}\``);
       if (r.nhapKhoDi) rows.push(`🚚 Nhập kho đi: *${formatIsoDate(r.nhapKhoDi)}*`);
       if (r.nguoiKiemHoa || r.ngayKiemHoa) rows.push(`👷 Kiểm hoá: ${formatPhone(r.nguoiKiemHoa)} • ${r.ngayKiemHoa || '(chưa có)'}`);
       if (r.canNang) rows.push(`⚖️ Cân nặng: *${formatWeight(r.canNang)}*`);
@@ -472,6 +528,7 @@ function formatReply(intent, result, user) {
       answer = [
         HR,
         `📋 *${r.maF}* — Kho ${wh}`,
+        `🏷 Mã K: \`${r.maK || '(chưa có)'}\``,
         `👤 Mã KH: \`${r.maKH || '(chưa có)'}\``,
         `⚖️ Cân nặng: *${formatWeight(r.canNang)}*`,
         `✅ Trạng thái: *${r.trangThai || '(chưa có)'}*`,
@@ -502,6 +559,9 @@ function buildButtons(code) {
         { text: '👷 Kiểm hoá', callback_data: `kiem-hoa:${code}` },
         { text: '🧾 Invoice', callback_data: `invoice:${code}` },
         { text: '📋 Chi tiết', callback_data: `full:${code}` },
+      ],
+      [
+        { text: '📦 Danh sách hàng', callback_data: `product-list:${code}` },
       ],
     ],
   };
@@ -744,6 +804,10 @@ async function handleMessage(msg) {
   }
 
   const result = await callLookup(intent);
+  // Pre-fetch danh sách hàng nếu mode product-list (lookup detail API riêng, có cache)
+  if (intent.mode === 'product-list' && result?.success && result.rows?.[0]?.packageFId) {
+    intent.__products = await getProductsCached(result.rows[0].packageFId);
+  }
   const fmt = formatReply(intent, result, msg.from);
 
   if (fmt.photoUrl) {
@@ -776,6 +840,10 @@ async function handleCallback(cb) {
 
   const intent = { mode, code, isCustomer, warehouse, start: ctx?.start, end: ctx?.end };
   const result = await callLookup(intent);
+  // Pre-fetch danh sách hàng nếu mode product-list
+  if (intent.mode === 'product-list' && result?.success && result.rows?.[0]?.packageFId) {
+    intent.__products = await getProductsCached(result.rows[0].packageFId);
+  }
   const fmt = formatReply(intent, result, cb.from);
 
   const chatTitle = cb.message?.chat?.title || cb.message?.chat?.username || '';
@@ -894,5 +962,16 @@ if (offset === 0) {
     }
   } catch (e) { logInfo('drain err:', e.message); }
 }
+
+// Pre-warm undici connection pool tới Telegram + KinKin (tránh TCP+TLS handshake ~200-300ms cho query đầu)
+(async () => {
+  try {
+    await Promise.all([
+      fetch(`${TG}/getMe`, { signal: AbortSignal.timeout(5000) }).then(r => r.json()).catch(() => null),
+      fetch('https://warehousedepartureapi.vanchuyenkinkin.com/warehousedeparture/api/health', { signal: AbortSignal.timeout(5000) }).catch(() => null),
+    ]);
+    logInfo('connection pool warmed (Telegram + KinKin)');
+  } catch {}
+})();
 
 poll().catch(e => { logInfo('FATAL:', e.message); process.exit(1); });
